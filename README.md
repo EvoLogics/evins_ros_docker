@@ -105,7 +105,7 @@ the top level launch file in the 'MISSIONS'/launch directory.
 
 For example,
 ```shell
-./run-evins-container 1 polling ship
+./run-sim-container 1 polling ship
 ```
 
 ## Run something in the running container
@@ -113,3 +113,50 @@ Replace `'container_name'` with the name of the container that you want to enter
 ```shell
 docker exec -i -t 'container_name' bash
 ```
+## Manually run ship-auv polling
+
+It is assumed, there is vpn connection to the emulator or ethernet connection to dmace-box and the IPs of emulated modems are registered in the file docker/hosts as hostnames `lvX`.
+
+Run polling mission on the ship side with the modem 1:
+```shell
+./run-sim-container 1 polling ship
+```
+It runs evins with configuration missins/polling/etc/fsm-1.conf, dynamically generated from the file missions/polling/etc/fsm.conf.m4.mux.polling and run roslaunch with the launchfile missions/polling/launch/ship.launch.
+
+Run polling mission on the auv side with the modem 2 on a different terminal:
+```shell
+./run-sim-container 2 polling auv
+```
+It runs evins with configuration missins/polling/etc/fsm-2.conf, dynamically generated from the file missions/polling/etc/fsm.conf.m4.mux.polling and run roslaunch with the launchfile missions/polling/launch/auv.launch.
+
+Connect to the auv side container:
+```shell
+docker exec -i -t lv2 bash
+```
+
+And run the following commands:
+```shell
+# set protocol polling:
+rostopic pub -1 /evins_nl/protocol evins_nl/NLProtocol '{protocol: "polling", command: {id: 2}}'
+rostopic echo /evins_nl/raw
+```
+
+Connect to the ship side container:
+```shell
+docker exec -i -t lv1 bash
+```
+
+And run the following commands:
+```shell
+# set protocol polling:
+rostopic pub -1 /evins_nl/protocol evins_nl/NLProtocol '{protocol: "polling", command: {id: 2}}'
+# set polling sequence [2,3]:
+rostopic pub -1 /evins_nl/polling evins_nl/NLPolling '{sequence: [2,3], command: {id: 2, subject: 14}}'
+# start polling with burst data:
+rostopic pub -1 /evins_nl/polling evins_nl/NLPolling '{flag: 1, command: {id: 8, subject: 14}}'
+# send sensitive message "test" to modem 2:
+rostopic pub -1 /evins_nl/data evins_nl/NLData '{datatype: 2, data: "test", route: {destination: 2}, command: {id: 6, subject: 12}}'
+```
+
+The sequence of above defined commands runs the polling interrogation and sends sensitive packet "test" to the modem 2.
+Its reception can be seen on the auv side with the running rostopic echo.
