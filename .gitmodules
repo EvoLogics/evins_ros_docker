@@ -1,0 +1,9 @@
+[submodule "nodes/dmac"]
+	path = nodes/dmac
+	url = git@github.com:evologics/dmac
+[submodule "nodes/evins_nl"]
+	path = nodes/evins_nl
+	url = git@github.com:evologics/evins_nl
+[submodule "evins"]
+	path = evins
+	url = git@github.com:okebkal/evins
