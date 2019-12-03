@@ -1,0 +1,12 @@
+#!/bin/bash
+
+D=$(readlink -f $(dirname $0))
+export subnet=127.0.0.1
+if [ -z "$1" ]; then
+  export emusubnet=10.42.0.
+else
+  export emusubnet=$1
+fi
+. $D/runrc
+ID=$2
+address=$ID m4 $D/fsm.conf.m4$SUFFIX > $D/fsm-$ID.conf

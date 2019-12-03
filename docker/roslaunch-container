@@ -1,0 +1,22 @@
+#!/bin/sh
+
+SCRIPT_NAME=`basename $0`
+
+usage()
+{
+    cat >&2 << ____USAGE
+Running simulation launch file in docker container
+Usage:
+./$SCRIPT_NAME evins_dir simulation_dir launch_file vehicle_id
+Example:
+./roslaunch-container /opt/ros 201708_berlin_simulations asv.launch 9
+____USAGE
+}
+
+[ $# -ne 4 ] && usage && exit 0
+
+ROLE=$4
+ID=$5
+./run-evins-container $ID \
+  roslaunch src/missions/$MIS/launch/$ROLE \
+  real:=false vehicle_id:=$ID vehicle_name:=$ID

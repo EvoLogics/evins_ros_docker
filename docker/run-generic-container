@@ -1,0 +1,16 @@
+#!/bin/sh
+NAME=$1
+MISSION=$2
+shift
+shift
+
+CMD="$@"
+
+docker run -i --rm --name $NAME -h evins \
+   -v $EVINS_DIR/evins_ros_docker/nodes:/root/catkin_ws/src/evins_nodes \
+   -v $EVINS_DIR/evins_ros_docker/evins/_rel/evins:/opt/evins \
+   -v $EVINS_DIR/evins_ros_docker/nodes/missions/$MISSION/etc:/opt/evins/etc \
+   -v $EVINS_DIR/evins_ros_docker/nodes/missions/$MISSION/bin:/opt/bin \
+   -v $SIM_DIR:/root/catkin_ws/src/sim_nodes \
+   -v $INST_DIR:/root/catkin_ws/ \
+   -t ros:evins $CMD

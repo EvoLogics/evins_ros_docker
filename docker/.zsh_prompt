@@ -1,0 +1,142 @@
+function zle-line-init {
+    psvar[2]="${${KEYMAP/vicmd/|}/(main|viins)/>}"
+    zle reset-prompt
+}
+
+function zle-keymap-select {
+    zle-line-init
+}
+zle -N zle-line-init
+zle -N zle-keymap-select
+
+if [[ -n "$SSH_CLIENT" ]]; then
+    HOSTCOLOR=%B%F{blue}
+else
+    HOSTCOLOR=%b%F{yellow}
+fi
+
+setopt PROMPT_SUBST
+RPROMPT=$'${vcs_info_msg_0_}'
+
+function lprompt {
+    psvar[2]=">"
+
+    PROMPT="\
+%{%b%F{yellow}%}%n%(!.%{%B%F{red}%}.%{%b%F{yellow}%})@\
+%{%b%F{yellow}%}%m\
+%{%b%F{white}%}:!$p_shlvlhist\
+%{%(?.%b%F{red}.%B%F{red})%}:$1\
+%{%B%F{green}%}%~/%f\
+%2v%{%b%s%u%f%} \
+"
+}
+
+
+autoload -Uz vcs_info
+zstyle ':vcs_info:*'              enable            git svn cvs
+#zstyle ':vcs_info:*'              disable-patterns "$HOME(|/.*|/bin|/mnt/*)|/media/*"
+zstyle ':vcs_info:*'              actionformats    '%F{5}(%f%s%F{5})[%F{2}%b%F{3}|%F{1}%a%F{5}%F{3}%m%F{5}][%B%F{yellow}%c%F{red}%u%%b%F{5}]%f '
+zstyle ':vcs_info:*'              formats          '%F{5}(%f%s%F{5})[%F{2}%b%F{5}%F{3}%m%F{5}][%B%F{yellow}%c%F{red}%u%%b%F{5}]%f '
+
+zstyle ':vcs_info:(sv[nk]|bzr):*' branchformat     '%b%F{1}:%F{3}%r'
+
+# добавлять в имя бранча гита часть хеша?
+#zstyle ':vcs_info:git:*'          branchformat     '%b%F{1}:%F{3}${%i[1,7]}'
+
+zstyle ':vcs_info:*'              check-for-changes true
+zstyle ':vcs_info:*'              get-revision      true
+
+
+#zstyle ':vcs_info:*'              debug             true
+
+
+# https://github.com/johan/zsh/blob/master/Misc/vcs_info-examples
+# A number of examples in this file revolve around the concept of `hooks'
+# in vcs_info. Hooks are places in vcs_info where you may put in your
+# own code to achieve something "totally awesome"[tm].
+#
+# Hooks can be confusing. It's hard to keep track of what's going on.
+# In order to help you with that vcs_info can output some debugging
+# information when it processes hooks. This will tell you which hooks
+# are being run and which functions are attempted to run (and if the
+# functions in question were found or not).
+#
+# If you feel like you need to see what's attempted and where, I suggest
+# you use the following line and see for yourself.
+zstyle ':vcs_info:*+*:*' debug true
+
+# You can just comment it out (or disable it) again when you've seen enough.
+# Debugging is off by default - of course.
+zstyle ':vcs_info:*+*:*' debug false
+
+# Further down, every example that uses a function named `+vi-*' uses a hook.
+### Compare local changes to remote changes
+
+### git: Show +N/-N when your local branch is ahead-of or behind remote HEAD.
+# Make sure you have added misc to your 'formats':  %m
+#zstyle ':vcs_info:git*+set-message:*' hooks git-st
+function +vi-git-st() {
+    local ahead behind
+    local -a gitstatus
+
+    # for git prior to 1.7
+    # ahead=$(git rev-list origin/${hook_com[branch]}..HEAD | wc -l)
+    ahead=$(git rev-list ${hook_com[branch]}@{upstream}..HEAD 2>/dev/null | wc -l)
+    (( $ahead )) && gitstatus+=( "+${ahead}" )
+
+    # for git prior to 1.7
+    # behind=$(git rev-list HEAD..origin/${hook_com[branch]} | wc -l)
+    behind=$(git rev-list HEAD..${hook_com[branch]}@{upstream} 2>/dev/null | wc -l)
+    (( $behind )) && gitstatus+=( "-${behind}" )
+
+    hook_com[misc]+=${(j:/:)gitstatus}
+}
+
+### git: Show remote branch name for remote-tracking branches
+zstyle ':vcs_info:git*+set-message:*' hooks git-st git-remotebranch
+
+function +vi-git-remotebranch() {
+    local remote
+
+    # Are we on a remote-tracking branch?
+    remote=${$(git rev-parse --verify ${hook_com[branch]}@{upstream} \
+        --symbolic-full-name 2>/dev/null)/refs\/remotes\/}
+
+    if [[ -n ${remote} ]] ; then
+        hook_com[branch]="${hook_com[branch]} [${remote}]"
+    fi
+}
+
+setopt promptbang
+
+prompt_precmd ()
+{
+    setopt noxtrace localoptions
+    local exitstatus=$1
+    [[ $exitstatus -ge 128 ]] && psvar[1]=" $signals[$exitstatus-127]" ||
+        psvar[1]=""
+
+    [[ -o interactive ]] && jobs -l
+
+    #promptnl
+}
+
+precmd() {
+    local exitstatus=$?
+    [[ -t 1 ]] || return    # not batch mode
+
+    vcs_info
+
+    prompt_precmd $exitstatus;
+    # prompt_term_precmd;
+}
+
+function show_prompt {
+    p_rc="%(?..[%?%1v])"
+    lprompt $p_rc
+    PROMPT2='%(4_.\.)%3_> %E'
+}
+
+
+# draw prompt first time
+show_prompt

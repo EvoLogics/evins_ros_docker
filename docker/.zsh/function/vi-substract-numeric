@@ -1,0 +1,5 @@
+emulate -L zsh
+autoload -U vi-add-numeric
+NUMERIC=$((0 - ${NUMERIC:-${incarg:-1}}))
+vi-add-numeric
+

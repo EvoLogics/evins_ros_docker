@@ -1,0 +1,24 @@
+<launch>
+  <arg name="modem_ip" default="$(arg vehicle_name)"/>
+  <arg name="vehicle_id" default="1" />
+  <arg name="real" default="false"/>
+  <arg name="mission_folder"      default="polling" />
+  <arg name="vehicle_name"        default="ship" />
+
+  <node pkg="dmac" type="dmac" name="modem" output="screen">
+    <param name="modem_config/tcp_config/ip" value="$(arg modem_ip)"/>
+    <param name="modem_config/tcp_config/port"   value="9202"/>
+    <param name="modem_config/local_address" value="$(arg vehicle_id)"/>
+    <rosparam param="modem_config/initializer">
+      "@ZA" : "1"
+      "@ZX" : "1"
+    </rosparam>
+  </node>
+  
+  <node pkg="evins_nl" type="evins_nl" name="evins_nl" output="screen">
+    <param name="evins_nl_config/tcp_config/ip"     value="localhost"/>
+    <param name="evins_nl_config/tcp_config/port"   value="1111"/>
+  </node>
+ 
+</launch>
+  

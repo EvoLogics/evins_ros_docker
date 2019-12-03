@@ -1,0 +1,14 @@
+<launch>
+  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${time}]: ${node}: ${message}"/>
+  <arg name="vehicle_name"        default="ship" />
+  <arg name="vehicle_id"          default="1" />
+  <arg name="mission_folder"      default="polling" />
+  <arg name="real"/>
+  
+  <include file="$(find missions)/$(arg mission_folder)/launch/modem.launch">
+    <arg name="vehicle_name" value="$(arg vehicle_name)" />
+    <arg name="vehicle_id" value="$(arg vehicle_id)" />
+    <arg name="real" value="$(arg real)" />
+    <arg name="mission_folder" value="$(arg mission_folder)" />
+  </include>
+</launch>

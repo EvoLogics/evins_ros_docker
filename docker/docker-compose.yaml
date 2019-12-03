@@ -1,0 +1,51 @@
+version: '3'
+
+networks:
+  medusa_net:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 192.168.1.0/16
+
+services:
+  myellow:
+    # build: .
+    image: ros:evins
+    container_name: ship
+    hostname: ship
+    networks:
+      evins_net:
+        ipv4_address: 192.168.1.33
+    volumes:
+        - "$EVINS_DIR:/root/catkin_ws/src/evins_nodes"
+        - "$SIM_DIR:/root/catkin_ws/src/sim_nodes"
+        - "$INST_DIR:/root/catkin_ws/"
+    command: roslaunch evins_launch Example_evins.launch name:=ship real:=false bags:=false
+
+  mblack:
+    # build: .
+    image: ros:evins
+    container_name: auv1
+    hostname: auv1
+    networks:
+      medusa_net:
+        ipv4_address: 192.168.1.32
+    volumes:
+        - "$EVINS_DIR:/root/catkin_ws/src/evins_nodes"
+        - "$SIM_DIR:/root/catkin_ws/src/sim_nodes"
+        - "$INST_DIR:/root/catkin_ws/"
+    command: roslaunch evins_launch Example_evins.launch name:=auv1 real:=false bags:=false
+
+  mred:
+    # build: .
+    image: ros:evins
+    container_name: auv2
+    hostname: auv2
+    networks:
+      medusa_net:
+        ipv4_address: 192.168.1.31
+    volumes:
+        - "$EVINS_DIR:/root/catkin_ws/src/evins_nodes"
+        - "$SIM_DIR:/root/catkin_ws/src/sim_nodes"
+        - "$INST_DIR:/root/catkin_ws/"
+    command: roslaunch evins_launch Example_evins.launch name:=auv1 real:=false bags:=false

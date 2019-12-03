@@ -1,0 +1,83 @@
+# http://www.zsh.org/mla/workers/2007/msg00133.html
+# gpg: key 2701B2B3: public key "Arnaud Renevier <arenevier@fdn.fr>"
+#
+# This function acts like add command in vim (^A in command mode)
+# Only works now for decimal numbers
+#
+# If cursor is on any digit of a number, increment that number.
+# If cursor is not on a number, find the next number on the right and increment
+# it.
+# Cursor is then placed on the last digit of that number.
+#
+# If a numeric argument is given, increment the number by that argument.
+# Otherwise, increment by shell parameter incarg (it can be useful to set that
+# parameter if you plan to do a lot with a particular number). Otherwise,
+# increment by 1.
+#
+# examples:
+# echo 41 43
+# ^^^^^^^ cursor anywhere here
+# ->
+# echo 42 43
+#       ^ cursor here now
+#
+#
+# echo 41 43
+#        ^^^ cursor anywhere here
+# ->
+# echo 42 43
+#          ^ cursor here now
+#
+
+emulate -L zsh
+setopt extendedglob
+
+local pos num newnu sign buf fmt
+
+if [[ $BUFFER[$((CURSOR + 1))] = [0-9] ]]; then
+
+    # cursor is on a number; search its beginning to the left
+    pos=$((${#LBUFFER%%[0-9]##} + 1))
+
+else
+
+    # cursor is not on a number; search a number to the right
+    pos=$(($CURSOR + ${#RBUFFER%%[0-9]*} + 1))
+
+fi
+
+# no number found in BUFFER
+(($pos <= ${#BUFFER}))  || return
+
+
+# ok, get the number now
+num=${${BUFFER[$pos,-1]}%%[^0-9]*}
+
+# checks if number start with 0
+if [ $BUFFER[$((pos))] = '0' ]; then
+    fmt="%0${#num}d"
+    #checks if number is negative
+#elif ((pos > 0)) && [ $BUFFER[$((pos - 1))] = '-' ]; then
+#    num=$((0 - num))
+#    ((pos--))
+fi
+
+# computes result
+newnum=$((num + ${NUMERIC:-${incarg:-1}}))
+
+if [[ -n $fmt ]]; then
+    newnum=$(printf $fmt $newnum)
+fi    
+
+# replaces old number by result
+if ((pos > 1)); then
+    buf=${BUFFER[0,$((pos - 1))]}${BUFFER[$pos,-1]/$num/$newnum}
+else
+    buf=${BUFFER/$num/$newnum}
+fi
+
+# assign computed string to buffer
+BUFFER=$buf
+
+# places cursor on last digit of number
+CURSOR=$((pos + $#newnum - 2))
